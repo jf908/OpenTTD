@@ -86,7 +86,7 @@ In pseudo-code:
 
 ```
 type = read uint8
-if type == 0
+if type & 0b1111 == 0
     length = read uint24
     length |= ((type >> 4) << 24)
 ```
@@ -117,6 +117,7 @@ For entries in the game that were not allocated, the `size` will be zero.
 
 `[G1+1..G2]` - For `CH_SPARSE_ARRAY` there is an explicit index.
 The `gamma` following the size indicates the index.
+The bytes taken up by this index are included in the size.
 
 The content of the item is a binary blob, and similar to `CH_RIFF`, it depends on the tag of the chunk what it means.
 Please check the source-code for further details.
@@ -143,7 +144,7 @@ If at any point `type` is zero, the list stops (and no `key` follows).
 The `type`'s lower 4 bits indicate the data-type (see chapter above).
 The `type`'s 5th bit (so `0x10`) indicates if the field is a list, and if this field in every record starts with a `gamma` to indicate how many times the `type` is repeated.
 
-If the `type` indicates either a `struct` or `str`, the `0x10` flag is also always set.
+If the `type` indicates either a `struct` or `str`, the `0x10` flag is also always set. A `str` counts as a list of characters, not a list of strings.
 
 As the savegame format allows (list of) structs in structs, if any `struct` type is found, this header will be followed by a header of that struct.
 This nesting of structs is stored depth-first, so given this table:
@@ -169,6 +170,7 @@ The headers will be, in order: `table`, `substruct1`, `substruct3`, `substruct2`
 
 After reading all the fields of all the headers, there is a list of records.
 To read this, see `CH_ARRAY` / `CH_SPARSE_ARRAY` for details.
+Each element of the array will line up with each `(type, key)` pair in the header.
 
 As each `type` has a well defined length, you can read the records even without knowing anything about the chunk-tag yourself.
 
